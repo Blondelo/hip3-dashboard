@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HIP-3 · Hyperliquid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #08090d;
+  --panel:    #0f1117;
+  --panel2:   #161b24;
+  --line:     #1f2937;
+  --cyan:     #06d6c7;
+  --purple:   #8b5cf6;
+  --green:    #10b981;
+  --red:      #ef4444;
+  --amber:    #f59e0b;
+  --orange:   #f97316;
+  --txt:      #f1f5f9;
+  --txt2:     #94a3b8;
+  --txt3:     #475569;
+  --mono:     'DM Mono', monospace;
+  --sans:     'Outfit', sans-serif;
+}
+
+html { font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--sans);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* ─── NOISE TEXTURE ─────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  opacity: 0.6;
+}
+
+/* ─── LAYOUT ────────────────────────────────────────────── */
+.page {
+  position: relative; z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 32px 28px 64px;
+}
+
+/* ─── HEADER ────────────────────────────────────────────── */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.brand { display: flex; align-items: center; gap: 14px; }
+
+.brand-icon {
+  width: 48px; height: 48px; border-radius: 12px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 11px; font-weight: 500; color: #fff;
+  letter-spacing: 0.05em;
+  box-shadow: 0 0 0 1px rgba(6,214,199,0.3), 0 8px 32px rgba(6,214,199,0.15);
+}
+
+.brand-text .title {
+  font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: var(--txt);
+  line-height: 1.1;
+}
+.brand-text .title em { font-style: normal; color: var(--cyan); }
+.brand-text .sub {
+  font-size: 12px; color: var(--txt3); font-family: var(--mono);
+  margin-top: 3px; letter-spacing: 0.03em;
+}
+
+.dex-pills { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.dex-pill {
+  padding: 4px 11px; border-radius: 6px; font-size: 11px;
+  font-family: var(--mono); letter-spacing: 0.06em; font-weight: 500;
+  border: 1px solid; transition: all 0.2s;
+}
+.dp-cyan   { color: var(--cyan);   border-color: rgba(6,214,199,0.3);  background: rgba(6,214,199,0.07); }
+.dp-green  { color: var(--green);  border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.07); }
+.dp-purple { color: #a78bfa;       border-color: rgba(139,92,246,0.3); background: rgba(139,92,246,0.07); }
+
+/* ─── UPLOAD ────────────────────────────────────────────── */
+#upload-section {
+  border: 1.5px dashed var(--line);
+  border-radius: 16px;
+  padding: 56px 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.25s, background 0.25s;
+  background: transparent;
+  margin-bottom: 40px;
+  position: relative;
+}
+#upload-section:hover,
+#upload-section.drag { border-color: var(--cyan); background: rgba(6,214,199,0.03); }
+
+.upload-emoji { font-size: 36px; margin-bottom: 14px; display: block; }
+.upload-title { font-size: 17px; font-weight: 700; color: var(--txt); margin-bottom: 6px; }
+.upload-hint { font-size: 12px; color: var(--txt3); font-family: var(--mono); line-height: 1.8; }
+.upload-hint span { color: var(--cyan); }
+
+.upload-cta {
+  display: inline-block; margin-top: 20px;
+  padding: 10px 28px;
+  background: linear-gradient(135deg, var(--cyan), var(--purple));
+  border: none; border-radius: 8px;
+  color: #fff; font-family: var(--sans); font-weight: 700; font-size: 13px;
+  cursor: pointer; letter-spacing: 0.02em;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.upload-cta:hover { opacity: 0.85; transform: translateY(-1px); }
+#file-input { display: none; }
+#file-badge {
+  display: none; margin-top: 14px;
+  font-size: 12px; font-family: var(--mono);
+  color: var(--green);
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.25);
+  border-radius: 6px; padding: 5px 14px;
+  display: none; align-items: center; gap: 6px;
+  width: fit-content; margin-left: auto; margin-right: auto;
+}
+
+/* ─── NO DATA ───────────────────────────────────────────── */
+#no-data {
+  display: none; text-align: center; padding: 60px 24px;
+}
+#no-data .icon { font-size: 42px; margin-bottom: 14px; }
+#no-data h3 { font-size: 18px; font-weight: 700; color: var(--amber); margin-bottom: 10px; }
+#no-data p  { font-size: 12px; color: var(--txt2); font-family: var(--mono); line-height: 2; }
+
+/* ─── DASHBOARD ─────────────────────────────────────────── */
+#dash { display: none; }
+
+/* ─── CONTROLS ──────────────────────────────────────────── */
+.controls {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 32px; flex-wrap: wrap;
+}
+.ctrl-label {
+  font-size: 11px; font-family: var(--mono); color: var(--txt3);
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding-right: 4px; white-space: nowrap;
+}
+.ctrl-group { display: flex; gap: 5px; }
+.ctrl-sep { width: 1px; height: 20px; background: var(--line); margin: 0 6px; flex-shrink: 0; }
+.cb {
+  padding: 5px 14px; border-radius: 6px;
+  border: 1px solid var(--line); background: var(--panel);
+  color: var(--txt2); font-family: var(--mono);
+  font-size: 11px; letter-spacing: 0.04em; cursor: pointer;
+  transition: all 0.18s; white-space: nowrap;
+}
+.cb:hover { border-color: rgba(6,214,199,0.4); color: var(--cyan); }
+.cb.on { border-color: var(--cyan); color: var(--cyan); background: rgba(6,214,199,0.08); }
+.cb.dex-km.on    { border-color: var(--orange); color: var(--orange); background: rgba(249,115,22,0.08); }
+.cb.dex-hyna.on  { border-color: #a78bfa; color: #a78bfa; background: rgba(139,92,246,0.08); }
+
+/* ─── SECTION LABEL ─────────────────────────────────────── */
+.section-label {
+  font-size: 10px; font-family: var(--mono); font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.14em; color: var(--txt3);
+  margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+/* ─── KPI GRID — KEY FIX: 4 colonnes fixes, taille adaptée ─ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.kpi {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px 20px 16px;
+  position: relative; overflow: hidden;
+  animation: rise 0.35s ease both;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.kpi:hover { transform: translateY(-2px); border-color: rgba(6,214,199,0.2); }
+
+/* accent bar top */
+.kpi::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--kc, linear-gradient(90deg, var(--cyan), var(--purple)));
+}
+.kpi.kc-g::before  { background: linear-gradient(90deg, var(--green), #059669); --kc: ok; }
+.kpi.kc-r::before  { background: linear-gradient(90deg, var(--red), #b91c1c); }
+.kpi.kc-a::before  { background: linear-gradient(90deg, var(--amber), #d97706); }
+.kpi.kc-p::before  { background: linear-gradient(90deg, var(--purple), #4f46e5); }
+.kpi.kc-o::before  { background: linear-gradient(90deg, var(--orange), #c2410c); }
+
+.kpi-label {
+  font-size: 10px; font-family: var(--mono); color: var(--txt3);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px;
+}
+
+/* KEY FIX: font-size fluide, pas de troncature */
+.kpi-val {
+  font-size: clamp(16px, 2.2vw, 26px);
+  font-weight: 800;
+  color: var(--txt);
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  word-break: break-all;  /* évite le débordement */
+  white-space: normal;
+}
+.kpi-val.pos { color: var(--green); }
+.kpi-val.neg { color: var(--red); }
+
+.kpi-sub {
+  font-size: 10px; font-family: var(--mono); color: var(--txt3); margin-top: 7px;
+}
+
+/* ─── DEX BREAKDOWN ─────────────────────────────────────── */
+.dex-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px; margin-bottom: 32px;
+}
+.dex-card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  padding: 18px 20px; animation: rise 0.4s ease both;
+}
+.dex-head {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 14px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.dex-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.dex-name { font-size: 15px; font-weight: 700; letter-spacing: 0.03em; }
+.dex-count { margin-left: auto; font-size: 11px; font-family: var(--mono); color: var(--txt3); }
+
+.dex-stat { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; }
+.dex-stat-label { font-size: 11px; color: var(--txt3); font-family: var(--mono); }
+.dex-stat-val   { font-size: 13px; font-weight: 600; color: var(--txt); font-family: var(--mono); }
+
+/* ─── CHARTS ────────────────────────────────────────────── */
+.charts-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 32px;
+}
+@media (max-width: 760px) { .charts-row { grid-template-columns: 1fr; } }
+
+.chart-card {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 12px; padding: 20px;
+  animation: rise 0.5s ease both;
+}
+.chart-label {
+  font-size: 10px; font-family: var(--mono); color: var(--txt3);
+  text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px;
+}
+
+/* ─── TABLE ─────────────────────────────────────────────── */
+.table-card {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 12px; overflow: hidden; margin-bottom: 32px;
+  animation: rise 0.55s ease both;
+}
+.table-top {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap;
+}
+.table-top-title {
+  font-size: 11px; font-family: var(--mono); color: var(--txt3);
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+.table-count {
+  font-size: 11px; font-family: var(--mono); color: var(--cyan);
+  background: rgba(6,214,199,0.08); border: 1px solid rgba(6,214,199,0.2);
+  padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+}
+.table-search {
+  margin-left: auto;
+  background: var(--panel2); border: 1px solid var(--line);
+  border-radius: 6px; padding: 5px 12px;
+  color: var(--txt); font-family: var(--mono); font-size: 11px;
+  outline: none; width: 160px; transition: border-color 0.2s;
+}
+.table-search:focus { border-color: rgba(6,214,199,0.5); }
+.table-search::placeholder { color: var(--txt3); }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+
+thead th {
+  padding: 9px 16px; text-align: left;
+  font-size: 10px; font-family: var(--mono);
+  text-transform: uppercase; letter-spacing: 0.1em; color: var(--txt3);
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap; cursor: pointer; user-select: none;
+}
+thead th:hover { color: var(--cyan); }
+thead th.sorted { color: var(--cyan); }
+.si { opacity: 0.35; margin-left: 3px; font-size: 9px; }
+th.sorted .si { opacity: 1; }
+
+tbody tr { border-bottom: 1px solid rgba(255,255,255,0.03); transition: background 0.12s; }
+tbody tr:hover { background: rgba(6,214,199,0.03); }
+
+tbody td {
+  padding: 9px 16px;
+  font-size: 12px; font-family: var(--mono);
+  color: var(--txt2); white-space: nowrap;
+}
+
+.td-pair { color: var(--cyan) !important; font-weight: 500; }
+.tag {
+  display: inline-block; padding: 2px 7px; border-radius: 4px;
+  font-size: 10px; font-weight: 500; letter-spacing: 0.06em;
+  background: rgba(6,214,199,0.08); color: var(--cyan);
+  border: 1px solid rgba(6,214,199,0.18);
+}
+.tag.km   { background: rgba(249,115,22,0.08); color: var(--orange); border-color: rgba(249,115,22,0.2); }
+.tag.hyna { background: rgba(139,92,246,0.08); color: #a78bfa; border-color: rgba(139,92,246,0.2); }
+
+.dir-ol  { color: var(--green) !important; }
+.dir-cl  { color: var(--red) !important; }
+.dir-os  { color: var(--orange) !important; }
+.dir-cs  { color: var(--green) !important; }
+.dir-b   { color: var(--green) !important; }
+.dir-s   { color: var(--red) !important; }
+
+.pnl-pos { color: var(--green) !important; }
+.pnl-neg { color: var(--red) !important; }
+.pnl-z   { color: var(--txt3) !important; }
+
+/* ─── PAGINATION ────────────────────────────────────────── */
+.pager {
+  display: flex; align-items: center; justify-content: center;
+  gap: 5px; padding: 14px; border-top: 1px solid var(--line); flex-wrap: wrap;
+}
+.pg {
+  padding: 4px 11px; border: 1px solid var(--line);
+  background: var(--panel2); color: var(--txt3);
+  border-radius: 5px; font-family: var(--mono); font-size: 11px;
+  cursor: pointer; transition: all 0.15s;
+}
+.pg:hover, .pg.on { border-color: var(--cyan); color: var(--cyan); background: rgba(6,214,199,0.07); }
+.pg:disabled { opacity: 0.3; cursor: default; }
+
+/* ─── ANIMATIONS ────────────────────────────────────────── */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── RESPONSIVE ────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 540px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .kpi-val  { font-size: 16px; }
+  .page     { padding: 20px 16px 40px; }
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon">HIP-3</div>
+      <div class="brand-text">
+        <div class="title">Hyperliquid <em>HIP-3</em></div>
+        <div class="sub">Builder-deployed perps · DEX analytics</div>
+      </div>
+    </div>
+    <div class="dex-pills">
+      <span class="dex-pill dp-cyan">xyz · trade.xyz</span>
+      <span class="dex-pill dp-green">km</span>
+      <span class="dex-pill dp-purple">hyna</span>
+    </div>
+  </div>
+
+  <!-- UPLOAD -->
+  <div id="upload-section">
+    <span class="upload-emoji">📂</span>
+    <div class="upload-title">Déposer votre CSV Hyperliquid</div>
+    <div class="upload-hint">
+      Glissez-déposez ou <span>cliquez pour parcourir</span><br>
+      Les trades HIP-3 sont détectés via le format <strong style="color:#94a3b8">SYMBOL (dexname)</strong>
+    </div>
+    <button class="upload-cta" onclick="event.stopPropagation(); document.getElementById('file-input').click()">Choisir un fichier</button>
+    <div id="file-badge">✓ <span id="file-name"></span></div>
+    <input type="file" id="file-input" accept=".csv">
+  </div>
+
+  <!-- NO DATA -->
+  <div id="no-data">
+    <div class="icon">🔍</div>
+    <h3>Aucun trade HIP-3 dans ce fichier</h3>
+    <p>Format attendu dans la colonne <code style="color:var(--cyan)">coin</code> : <code style="color:var(--amber)">TSLA (xyz)</code>, <code style="color:var(--amber)">BABA (km)</code>…<br>
+    Paires détectées : <span id="detected-coins"></span></p>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dash">
+
+    <!-- CONTROLS -->
+    <div class="controls">
+      <span class="ctrl-label">DEX</span>
+      <div class="ctrl-group" id="dex-btns"></div>
+      <div class="ctrl-sep"></div>
+      <span class="ctrl-label">Direction</span>
+      <div class="ctrl-group">
+        <button class="cb on" data-dir="all">Tous</button>
+        <button class="cb" data-dir="long">Long</button>
+        <button class="cb" data-dir="short">Short</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="section-label">Performance globale</div>
+    <div class="kpi-grid" id="kpi-grid"></div>
+
+    <!-- DEX -->
+    <div class="section-label">Détail par DEX</div>
+    <div class="dex-grid" id="dex-grid"></div>
+
+    <!-- CHARTS -->
+    <div class="section-label">Évolution temporelle</div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-label">Volume cumulé — USDC</div>
+        <canvas id="cv" height="160"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-label">PnL cumulé — USDC</div>
+        <canvas id="cp" height="160"></canvas>
+      </div>
+    </div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-label">Volume par paire (top 12)</div>
+        <canvas id="pv" height="220"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-label">PnL par paire</div>
+        <canvas id="pp" height="220"></canvas>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="section-label">Historique des trades</div>
+    <div class="table-card">
+      <div class="table-top">
+        <div class="table-top-title">Trades HIP-3</div>
+        <span class="table-count" id="t-count">–</span>
+        <input class="table-search" id="t-search" placeholder="Filtrer paire…" oninput="onSearch()">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="sortBy('time')">Date <span class="si" id="si-time">↕</span></th>
+              <th onclick="sortBy('sym')">Paire <span class="si" id="si-sym">↕</span></th>
+              <th>DEX</th>
+              <th onclick="sortBy('dir')">Direction <span class="si" id="si-dir">↕</span></th>
+              <th onclick="sortBy('px')">Prix <span class="si" id="si-px">↕</span></th>
+              <th onclick="sortBy('sz')">Taille <span class="si" id="si-sz">↕</span></th>
+              <th onclick="sortBy('ntl')">Volume $ <span class="si" id="si-ntl">↕</span></th>
+              <th onclick="sortBy('fee')">Frais <span class="si" id="si-fee">↕</span></th>
+              <th onclick="sortBy('pnl')">PnL réalisé <span class="si" id="si-pnl">↕</span></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="pager" id="pager"></div>
+    </div>
+
+  </div><!-- /dash -->
+</div><!-- /page -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════════════════════════ */
+let ALL = [], FILT = [];
+let aDex = 'all', aDir = 'all', srch = '', pg = 1, sk = 'time', sd = -1;
+const PS = 25;
+const CHS = {};
+
+const DEX_COLORS = {
+  xyz:  { main: '#06d6c7', dot: '#06d6c7' },
+  km:   { main: '#f97316', dot: '#f97316' },
+  hyna: { main: '#a78bfa', dot: '#a78bfa' },
+};
+const dc = d => DEX_COLORS[d] || { main: '#64748b', dot: '#64748b' };
+
+/* ═══════════════════════════════════════════════════════════════
+   UPLOAD
+═══════════════════════════════════════════════════════════════ */
+const up = document.getElementById('upload-section');
+const fi = document.getElementById('file-input');
+
+up.addEventListener('dragover',  e => { e.preventDefault(); up.classList.add('drag'); });
+up.addEventListener('dragleave', ()  => up.classList.remove('drag'));
+up.addEventListener('drop',      e  => { e.preventDefault(); up.classList.remove('drag'); if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
+up.addEventListener('click',     e  => { if (e.target.tagName !== 'BUTTON') fi.click(); });
+fi.addEventListener('change',    ()  => { if (fi.files[0]) loadFile(fi.files[0]); });
+
+function loadFile(f) {
+  document.getElementById('file-name').textContent = f.name;
+  document.getElementById('file-badge').style.display = 'inline-flex';
+  const r = new FileReader();
+  r.onload = e => parseCSV(e.target.result);
+  r.readAsText(f);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PARSE
+═══════════════════════════════════════════════════════════════ */
+function isHIP3(c) { return (c.includes('(') && c.includes(')')) || c.includes(':'); }
+function splitCoin(c) {
+  if (c.includes('(') && c.includes(')')) return { sym: c.split('(')[0].trim(), dex: c.split('(')[1].replace(')', '').trim().toLowerCase() };
+  if (c.includes(':')) { const [d, s] = c.split(':'); return { sym: s.trim(), dex: d.trim().toLowerCase() }; }
+  return { sym: c, dex: 'hl' };
+}
+
+function parseCSV(txt) {
+  const lines = txt.trim().split('\n');
+  if (lines.length < 2) return;
+  const H = lines[0].split(',').map(h => h.trim().replace(/\r/g,'').toLowerCase());
+  const I = { time: H.indexOf('time'), coin: H.indexOf('coin'), dir: H.indexOf('dir'), px: H.indexOf('px'), sz: H.indexOf('sz'), ntl: H.indexOf('ntl'), fee: H.indexOf('fee'), pnl: H.indexOf('closedpnl') };
+  const trades = [], allCoins = new Set();
+  for (let i = 1; i < lines.length; i++) {
+    const C = lines[i].split(',').map(c => c.trim().replace(/\r/g,''));
+    if (C.length < 3) continue;
+    const coin = I.coin >= 0 ? C[I.coin] : '';
+    allCoins.add(coin);
+    if (!isHIP3(coin)) continue;
+    const { sym, dex } = splitCoin(coin);
+    trades.push({
+      time: I.time >= 0 ? C[I.time] : '',
+      coin, sym, dex,
+      dir:  I.dir  >= 0 ? C[I.dir]  : '',
+      px:   parseFloat(I.px  >= 0 ? C[I.px]  : 0) || 0,
+      sz:   parseFloat(I.sz  >= 0 ? C[I.sz]  : 0) || 0,
+      ntl:  parseFloat(I.ntl >= 0 ? C[I.ntl] : 0) || 0,
+      fee:  parseFloat(I.fee >= 0 ? C[I.fee] : 0) || 0,
+      pnl:  parseFloat(I.pnl >= 0 ? C[I.pnl] : 0) || 0,
+      ts:   toTS(I.time >= 0 ? C[I.time] : ''),
+    });
+  }
+  ALL = trades;
+  if (!trades.length) {
+    document.getElementById('detected-coins').textContent = [...allCoins].filter(Boolean).slice(0, 25).join(', ') || '—';
+    document.getElementById('no-data').style.display = 'block';
+    document.getElementById('dash').style.display = 'none';
+    return;
+  }
+  document.getElementById('no-data').style.display = 'none';
+  buildDEXButtons();
+  apply();
+  document.getElementById('dash').style.display = 'block';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONTROLS
+═══════════════════════════════════════════════════════════════ */
+function buildDEXButtons() {
+  const dexes = ['all', ...new Set(ALL.map(t => t.dex))];
+  const el = document.getElementById('dex-btns'); el.innerHTML = '';
+  dexes.forEach(d => {
+    const b = document.createElement('button');
+    b.className = `cb${d !== 'all' ? ` dex-${d}` : ''} ${d === 'all' ? 'on' : ''}`;
+    b.textContent = d === 'all' ? 'Tous' : d.toUpperCase();
+    b.dataset.dex = d;
+    b.onclick = () => { aDex = d; el.querySelectorAll('.cb').forEach(x => x.classList.remove('on')); b.classList.add('on'); pg = 1; apply(); };
+    el.appendChild(b);
+  });
+}
+document.querySelectorAll('[data-dir]').forEach(b => {
+  b.onclick = () => { aDir = b.dataset.dir; document.querySelectorAll('[data-dir]').forEach(x => x.classList.remove('on')); b.classList.add('on'); pg = 1; apply(); };
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   FILTER
+═══════════════════════════════════════════════════════════════ */
+function apply() {
+  FILT = ALL.filter(t => {
+    if (aDex !== 'all' && t.dex !== aDex) return false;
+    if (srch && !t.sym.toLowerCase().includes(srch) && !t.coin.toLowerCase().includes(srch)) return false;
+    const d = t.dir.toLowerCase();
+    if (aDir === 'long'  && !(d.includes('buy') || d === 'open long' || d.includes('close short'))) return false;
+    if (aDir === 'short' && !(d.includes('sell') || d.includes('open short') || d.includes('close long'))) return false;
+    return true;
+  });
+  renderKPI(); renderDEX(); renderCharts(); renderTable();
+}
+function onSearch() { srch = document.getElementById('t-search').value.toLowerCase().trim(); pg = 1; apply(); }
+
+/* ═══════════════════════════════════════════════════════════════
+   KPIs
+═══════════════════════════════════════════════════════════════ */
+function renderKPI() {
+  const T = FILT;
+  const vol  = T.reduce((s, t) => s + Math.abs(t.ntl), 0);
+  const pnl  = T.reduce((s, t) => s + t.pnl, 0);
+  const fee  = T.reduce((s, t) => s + t.fee, 0);
+  const net  = pnl - fee;
+  const wins = T.filter(t => t.pnl > 0.0001).length;
+  const wr   = T.length ? wins / T.length * 100 : 0;
+  const longs = T.filter(t => { const d = t.dir.toLowerCase(); return d.includes('buy') || d === 'open long' || d.includes('close short'); }).length;
+  const pairs = new Set(T.map(t => t.sym)).size;
+  const dexes = new Set(T.map(t => t.dex)).size;
+
+  const K = [
+    { label: 'Volume total',   val: '$' + fmtN(vol),                                      sub: T.length + ' trades',        cls: '' },
+    { label: 'PnL réalisé',    val: sign(pnl) + '$' + fmtN(Math.abs(pnl)),               sub: 'avant frais',                cls: pnl >= 0 ? 'kc-g' : 'kc-r', vc: pnl >= 0 ? 'pos' : 'neg' },
+    { label: 'PnL net',        val: sign(net) + '$' + fmtN(Math.abs(net)),                sub: 'après frais',                cls: net >= 0 ? 'kc-g' : 'kc-r', vc: net >= 0 ? 'pos' : 'neg' },
+    { label: 'Frais payés',    val: '$' + fmtN(fee),                                      sub: 'cumulé',                     cls: 'kc-a' },
+    { label: 'Win Rate',       val: wr.toFixed(1) + '%',                                   sub: wins + ' trades gagnants',    cls: wr >= 50 ? 'kc-g' : 'kc-r', vc: wr >= 50 ? 'pos' : 'neg' },
+    { label: 'Volume moyen',   val: '$' + fmtN(T.length ? vol / T.length : 0),           sub: 'par trade',                  cls: 'kc-p' },
+    { label: 'Paires actives', val: pairs + ' paires',                                    sub: dexes + ' DEX actifs',        cls: '' },
+    { label: 'Long / Short',   val: longs + ' L  /  ' + (T.length - longs) + ' S',       sub: 'répartition directionnelle', cls: 'kc-o' },
+  ];
+
+  document.getElementById('kpi-grid').innerHTML = K.map((k, i) => `
+    <div class="kpi ${k.cls}" style="animation-delay:${i * .04}s">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-val ${k.vc || ''}">${k.val}</div>
+      <div class="kpi-sub">${k.sub}</div>
+    </div>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DEX BREAKDOWN
+═══════════════════════════════════════════════════════════════ */
+function renderDEX() {
+  const dexes = [...new Set(ALL.map(t => t.dex))];
+  document.getElementById('dex-grid').innerHTML = dexes.map((dex, i) => {
+    const T = FILT.filter(t => t.dex === dex); if (!T.length) return '';
+    const vol = T.reduce((s, t) => s + Math.abs(t.ntl), 0);
+    const pnl = T.reduce((s, t) => s + t.pnl, 0);
+    const fee = T.reduce((s, t) => s + t.fee, 0);
+    const c = dc(dex);
+    return `<div class="dex-card" style="animation-delay:${i * .06}s; border-top: 2px solid ${c.main}20;">
+      <div class="dex-head">
+        <span class="dex-dot" style="background:${c.dot}; box-shadow: 0 0 8px ${c.dot}80;"></span>
+        <span class="dex-name" style="color:${c.main}">${dex.toUpperCase()}</span>
+        <span class="dex-count">${T.length} trades · ${new Set(T.map(t => t.sym)).size} paires</span>
+      </div>
+      <div class="dex-stat"><span class="dex-stat-label">Volume</span><span class="dex-stat-val">$${fmtN(vol)}</span></div>
+      <div class="dex-stat"><span class="dex-stat-label">PnL brut</span><span class="dex-stat-val" style="color:${pnl >= 0 ? 'var(--green)' : 'var(--red)'}">${sign(pnl)}$${fmtN(Math.abs(pnl))}</span></div>
+      <div class="dex-stat"><span class="dex-stat-label">Frais</span><span class="dex-stat-val">$${fmtN(fee)}</span></div>
+      <div class="dex-stat"><span class="dex-stat-label">PnL net</span><span class="dex-stat-val" style="color:${pnl - fee >= 0 ? 'var(--green)' : 'var(--red)'}">${sign(pnl - fee)}$${fmtN(Math.abs(pnl - fee))}</span></div>
+    </div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHARTS
+═══════════════════════════════════════════════════════════════ */
+function renderCharts() {
+  const sorted = [...FILT].sort((a, b) => a.ts - b.ts);
+  const dV = {}, dP = {};
+  sorted.forEach(t => {
+    const d = t.time.split(' ')[0];
+    dV[d] = (dV[d] || 0) + Math.abs(t.ntl);
+    dP[d] = (dP[d] || 0) + t.pnl;
+  });
+  const days = Object.keys(dV).sort((a, b) => toTS2(a) - toTS2(b));
+  const cV = days.reduce((a, d) => { a.push((a[a.length - 1] || 0) + dV[d]); return a; }, []);
+  const cP = days.reduce((a, d) => { a.push((a[a.length - 1] || 0) + dP[d]); return a; }, []);
+
+  const pV = {}, pP = {};
+  FILT.forEach(t => { pV[t.sym] = (pV[t.sym] || 0) + Math.abs(t.ntl); pP[t.sym] = (pP[t.sym] || 0) + t.pnl; });
+  const topV = Object.entries(pV).sort((a, b) => b[1] - a[1]).slice(0, 12);
+  const topP = Object.entries(pP).sort((a, b) => b[1] - a[1]);
+
+  const base = {
+    responsive: true,
+    animation: { duration: 500 },
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#475569', font: { family: 'DM Mono', size: 9 }, maxRotation: 40 } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#475569', font: { family: 'DM Mono', size: 9 } } }
+    }
+  };
+
+  ['cv', 'cp', 'pv', 'pp'].forEach(id => { if (CHS[id]) { CHS[id].destroy(); delete CHS[id]; } });
+
+  // Cumulative volume
+  const ctxV = document.getElementById('cv').getContext('2d');
+  const gV = ctxV.createLinearGradient(0, 0, 0, 160);
+  gV.addColorStop(0, 'rgba(6,214,199,0.28)'); gV.addColorStop(1, 'rgba(6,214,199,0.02)');
+  CHS.cv = new Chart(ctxV, { type: 'line', data: { labels: days, datasets: [{ data: cV, borderColor: '#06d6c7', backgroundColor: gV, borderWidth: 2, pointRadius: days.length > 40 ? 0 : 3, fill: true, tension: 0.4 }] }, options: { ...base } });
+
+  // Cumulative PnL
+  const lP = cP[cP.length - 1] || 0;
+  const pColor = lP >= 0 ? '#10b981' : '#ef4444';
+  const ctxP = document.getElementById('cp').getContext('2d');
+  const gP = ctxP.createLinearGradient(0, 0, 0, 160);
+  gP.addColorStop(0, lP >= 0 ? 'rgba(16,185,129,0.28)' : 'rgba(239,68,68,0.28)');
+  gP.addColorStop(1, lP >= 0 ? 'rgba(16,185,129,0.02)' : 'rgba(239,68,68,0.02)');
+  CHS.cp = new Chart(ctxP, { type: 'line', data: { labels: days, datasets: [{ data: cP, borderColor: pColor, backgroundColor: gP, borderWidth: 2, pointRadius: days.length > 40 ? 0 : 3, fill: true, tension: 0.4 }] }, options: { ...base } });
+
+  // Vol per pair
+  CHS.pv = new Chart(document.getElementById('pv'), {
+    type: 'bar',
+    data: { labels: topV.map(([p]) => p), datasets: [{ data: topV.map(([, v]) => v), backgroundColor: 'rgba(6,214,199,0.18)', borderColor: '#06d6c7', borderWidth: 1.5, borderRadius: 4 }] },
+    options: { ...base, indexAxis: 'y' }
+  });
+
+  // PnL per pair
+  CHS.pp = new Chart(document.getElementById('pp'), {
+    type: 'bar',
+    data: {
+      labels: topP.map(([p]) => p),
+      datasets: [{ data: topP.map(([, v]) => v), backgroundColor: topP.map(([, v]) => v >= 0 ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.18)'), borderColor: topP.map(([, v]) => v >= 0 ? '#10b981' : '#ef4444'), borderWidth: 1.5, borderRadius: 4 }]
+    },
+    options: { ...base, indexAxis: 'y' }
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TABLE
+═══════════════════════════════════════════════════════════════ */
+function sortBy(k) {
+  if (sk === k) sd *= -1; else { sk = k; sd = k === 'time' ? -1 : 1; }
+  document.querySelectorAll('.si').forEach(e => { e.textContent = '↕'; e.style.color = ''; });
+  const ic = document.getElementById(`si-${k}`);
+  if (ic) { ic.textContent = sd > 0 ? '↑' : '↓'; ic.style.color = 'var(--cyan)'; ic.closest('th').classList.add('sorted'); }
+  document.querySelectorAll('thead th').forEach(th => { if (th !== ic?.closest('th')) th.classList.remove('sorted'); });
+  pg = 1; renderTable();
+}
+
+function dirCls(d) {
+  const l = d.toLowerCase();
+  if (l === 'buy')         return 'dir-b';
+  if (l === 'sell')        return 'dir-s';
+  if (l === 'open long')   return 'dir-ol';
+  if (l === 'close long')  return 'dir-cl';
+  if (l.includes('open short'))  return 'dir-os';
+  if (l.includes('close short')) return 'dir-cs';
+  return '';
+}
+
+function renderTable() {
+  const getters = { time: t => t.ts, sym: t => t.sym, dir: t => t.dir, px: t => t.px, sz: t => t.sz, ntl: t => Math.abs(t.ntl), fee: t => t.fee, pnl: t => t.pnl };
+  const get = getters[sk] || (t => t.ts);
+  const sorted = [...FILT].sort((a, b) => {
+    const va = get(a), vb = get(b);
+    return (typeof va === 'string' ? va.localeCompare(vb) : (va - vb)) * sd;
+  });
+
+  document.getElementById('t-count').textContent = sorted.length + ' trade' + (sorted.length !== 1 ? 's' : '');
+  const tp = Math.max(1, Math.ceil(sorted.length / PS));
+  if (pg > tp) pg = tp;
+  const page = sorted.slice((pg - 1) * PS, pg * PS);
+
+  document.getElementById('tbody').innerHTML = page.map(t => `
+    <tr>
+      <td>${t.time}</td>
+      <td class="td-pair">${t.sym}</td>
+      <td><span class="tag ${t.dex}">${t.dex}</span></td>
+      <td class="${dirCls(t.dir)}">${t.dir}</td>
+      <td>${t.px < 1 ? t.px.toFixed(6) : t.px.toFixed(2)}</td>
+      <td>${t.sz.toLocaleString('fr-FR', { maximumFractionDigits: 4 })}</td>
+      <td>$${Math.abs(t.ntl).toFixed(2)}</td>
+      <td>$${t.fee.toFixed(4)}</td>
+      <td class="${t.pnl > .0001 ? 'pnl-pos' : t.pnl < -.0001 ? 'pnl-neg' : 'pnl-z'}">${t.pnl > 0 ? '+' : ''}$${t.pnl.toFixed(4)}</td>
+    </tr>`).join('');
+
+  // Pagination
+  const pEl = document.getElementById('pager');
+  if (tp <= 1) { pEl.innerHTML = ''; return; }
+  let h = `<button class="pg" onclick="goP(${pg - 1})" ${pg === 1 ? 'disabled' : ''}>‹</button>`;
+  const range = [];
+  for (let i = 1; i <= tp; i++) {
+    if (i === 1 || i === tp || (i >= pg - 2 && i <= pg + 2)) range.push(i);
+    else if (range[range.length - 1] !== '…') range.push('…');
+  }
+  range.forEach(p => {
+    if (p === '…') h += `<span style="color:var(--txt3);font-size:12px;padding:0 3px">…</span>`;
+    else h += `<button class="pg ${p === pg ? 'on' : ''}" onclick="goP(${p})">${p}</button>`;
+  });
+  h += `<button class="pg" onclick="goP(${pg + 1})" ${pg === tp ? 'disabled' : ''}>›</button>`;
+  pEl.innerHTML = h;
+}
+
+function goP(p) { const tp = Math.ceil(FILT.length / PS); pg = Math.max(1, Math.min(p, tp)); renderTable(); document.querySelector('.table-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILS
+═══════════════════════════════════════════════════════════════ */
+function fmtN(n) {
+  // Affiche les grands nombres avec séparateurs, les petits en décimales
+  if (Math.abs(n) >= 1000) return Math.round(n).toLocaleString('fr-FR');
+  if (Math.abs(n) >= 0.01)  return n.toFixed(2);
+  return n.toFixed(4);
+}
+function sign(n) { return n >= 0 ? '+' : ''; }
+
+function toTS(s) {
+  if (!s) return 0;
+  const [d, t] = s.split(' ');
+  if (!d) return 0;
+  const parts = d.split('/');
+  if (parts.length === 3) { const [dd, mm, yy] = parts; return new Date(`${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}T${t||'00:00:00'}`).getTime(); }
+  return new Date(s).getTime() || 0;
+}
+function toTS2(s) {
+  if (!s) return 0;
+  const [dd, mm, yy] = s.split('/');
+  return new Date(`${yy}-${mm}-${dd}`).getTime();
+}
+</script>
+</body>
+</html>
